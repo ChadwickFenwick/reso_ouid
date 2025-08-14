@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESO OUID Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group.button-group {
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-direction: row;
+        }
+        .clear-btn {
+            background: #6c757d;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input, select, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .stats {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .org-card {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: white;
+        }
+        .org-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .org-details {
+            color: #666;
+            font-size: 14px;
+        }
+        .org-details span {
+            margin-right: 15px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 15px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #f8f9fa;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .current-page {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .copy-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 2px 6px;
+            margin-left: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s;
+            min-width: 31px;
+
+        }
+        .copy-btn:hover {
+            background: #e9ecef;
+            color: #007bff;
+        }
+        .copy-btn.copied {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        .initial-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RESO OUID Search</h1>
+        
+        <form id="searchForm" class="search-form">
+            <div class="form-group">
+                <label for="query">Organization Name:</label>
+                <input type="text" id="query" placeholder="Search by name...">
+            </div>
+            <div class="form-group">
+                <label for="type">Type:</label>
+                <select id="type">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="state">State:</label>
+                <select id="state">
+                    <option value="">All States</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <select id="country">
+                    <option value="">All Countries</option>
+                </select>
+            </div>
+            <div class="form-group button-group">
+                <button type="submit">Search</button>
+                <button type="button" class="clear-btn" id="clearBtn">Clear Filters</button>
+            </div>
+        </form>
+        
+        <div id="stats" class="stats">
+            <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+            Loading dataset information...
+        </div>
+        <div id="results" class="results">
+            <div class="initial-loading">
+                <div class="spinner"></div>
+                Loading RESO organization data...
+            </div>
+        </div>
+        <div id="pagination" class="pagination"></div>
+    </div>
+
+    <script>
+        let allStats = {};
+        let currentPage = 1;
+        
+        function clearFilters() {
+            document.getElementById('query').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('state').value = '';
+            document.getElementById('country').value = '';
+            searchOrganizations(1);
+        }
+        
+        function copyToClipboard(text, buttonElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✓';
+                buttonElement.classList.add('copied');
+                
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.classList.remove('copied');
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✓';
+                buttonElement.classList.add('copied');
+                
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.classList.remove('copied');
+                }, 1500);
+            });
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                allStats = await response.json();
+                
+                populateDropdowns();
+                document.getElementById('stats').innerHTML = `
+                    <strong>Dataset Info:</strong> ${allStats.total_organizations} total organizations
+                `;
+                
+                // Initial search after dropdowns are populated
+                searchOrganizations();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('stats').innerHTML = '<strong>❌ Error loading data</strong>';
+                document.getElementById('results').innerHTML = '<div class="initial-loading">❌ Failed to load organization data. Please refresh the page to try again.</div>';
+            }
+        }
+        
+        function populateDropdowns() {
+            const typeSelect = document.getElementById('type');
+            const stateSelect = document.getElementById('state');
+            const countrySelect = document.getElementById('country');
+            
+            Object.keys(allStats.types || {}).sort().forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = `${type} (${allStats.types[type]})`;
+                typeSelect.appendChild(option);
+            });
+            
+            Object.keys(allStats.states || {}).sort().forEach(state => {
+                if (state !== 'Unknown') {
+                    const option = document.createElement('option');
+                    option.value = state;
+                    option.textContent = `${state} (${allStats.states[state]})`;
+                    stateSelect.appendChild(option);
+                }
+            });
+            
+            Object.keys(allStats.countries || {}).sort().forEach(country => {
+                if (country !== 'Unknown') {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = `${country} (${allStats.countries[country]})`;
+                    countrySelect.appendChild(option);
+                }
+            });
+        }
+        
+        async function searchOrganizations(page = 1) {
+            currentPage = page;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+            
+            const params = new URLSearchParams({
+                query: document.getElementById('query').value,
+                type: document.getElementById('type').value,
+                state: document.getElementById('state').value,
+                country: document.getElementById('country').value,
+                page: page,
+                per_page: 25
+            });
+            
+            try {
+                const response = await fetch(`/api/organizations?${params}`);
+                const data = await response.json();
+                
+                displayResults(data);
+                displayPagination(data);
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="error">Error searching organizations</div>';
+                console.error('Error:', error);
+            }
+        }
+        
+        function getTypeIcon(orgType) {
+            const icons = {
+                'Local Association': '🏘️',
+                'MLS': '🏢',
+                'Brokerage': '🏪',
+                'Commercial': '🏬',
+                'Technology Company': '💻',
+                'State or Provincial Association': '🏛️',
+                'National Association': '🌟',
+                'Pooled Platform': '🔗',
+                'Unknown': '❓'
+            };
+            return icons[orgType] || '🏢';
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (data.organizations.length === 0) {
+                resultsDiv.innerHTML = '<div class="loading">No organizations found matching your criteria.</div>';
+                return;
+            }
+            
+            let html = `<h3>Showing ${data.count} of ${data.total_count} organizations (Page ${data.page} of ${data.total_pages}):</h3>`;
+            
+            data.organizations.forEach(org => {
+                const address = [
+                    org.OrganizationAddress1,
+                    org.OrganizationCity,
+                    org.OrganizationStateOrProvince,
+                    org.OrganizationPostalCode
+                ].filter(Boolean).join(', ');
+                
+                const typeIcon = getTypeIcon(org.OrganizationType);
+                
+                const orgId = org.OrganizationUniqueId || 'N/A';
+                
+                html += `
+                    <div class="org-card">
+                        <div class="org-name">${typeIcon} ${org.OrganizationName || 'N/A'}</div>
+                        <div class="org-details">
+                            <span><strong>ID:</strong> ${orgId}${orgId !== 'N/A' ? `<button class="copy-btn" onclick="copyToClipboard('${orgId}', this)" title="Copy ID to clipboard">📋</button>` : ''}</span>
+                            <span><strong>Type:</strong> ${org.OrganizationType || 'N/A'}</span>
+                            <span><strong>Address:</strong> ${address || 'N/A'}</span>
+                            ${org.OrganizationWebsite ? `<span><strong>Website:</strong> <a href="${org.OrganizationWebsite}" target="_blank">${org.OrganizationWebsite}</a></span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function displayPagination(data) {
+            const paginationDiv = document.getElementById('pagination');
+            
+            if (data.total_pages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous button
+            html += `<button ${!data.has_prev ? 'disabled' : ''} onclick="searchOrganizations(${data.page - 1})">Previous</button>`;
+            
+            // Page numbers (show current page and a few around it)
+            const startPage = Math.max(1, data.page - 2);
+            const endPage = Math.min(data.total_pages, data.page + 2);
+            
+            if (startPage > 1) {
+                html += `<button onclick="searchOrganizations(1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<span>...</span>`;
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === data.page) {
+                    html += `<span class="current-page">${i}</span>`;
+                } else {
+                    html += `<button onclick="searchOrganizations(${i})">${i}</button>`;
+                }
+            }
+            
+            if (endPage < data.total_pages) {
+                if (endPage < data.total_pages - 1) {
+                    html += `<span>...</span>`;
+                }
+                html += `<button onclick="searchOrganizations(${data.total_pages})">${data.total_pages}</button>`;
+            }
+            
+            // Next button
+            html += `<button ${!data.has_next ? 'disabled' : ''} onclick="searchOrganizations(${data.page + 1})">Next</button>`;
+            
+            paginationDiv.innerHTML = html;
+        }
+        
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            searchOrganizations();
+        });
+        
+        // Add event listeners for dropdown changes
+        document.getElementById('type').addEventListener('change', () => searchOrganizations(1));
+        document.getElementById('state').addEventListener('change', () => searchOrganizations(1));
+        document.getElementById('country').addEventListener('change', () => searchOrganizations(1));
+        document.getElementById('query').addEventListener('input', () => {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(() => searchOrganizations(1), 300);
+        });
+        
+        // Clear filters button
+        document.getElementById('clearBtn').addEventListener('click', clearFilters);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Escape key to clear filters
+            if (e.key === 'Escape') {
+                clearFilters();
+            }
+            // Enter key to search (when not in a button)
+            if (e.key === 'Enter' && !e.target.matches('button')) {
+                e.preventDefault();
+                searchOrganizations(1);
+            }
+        });
+        
+        loadStats();
+    </script>
+</body>
+</html>
